@@ -1,4 +1,4 @@
-
+create view "RIOT_SHOPIFY"."SHOPIFY_RIOTSTORES"."PRODUCTS_FLATTENED" AS (
 
 select
 
@@ -15,22 +15,22 @@ select
     image:position::string AS image_position,
     image:src::string AS image_src,
     image:updated_at::string AS image_updated_at,
-    image:width::string AS image_width,
     image_variant_ids.value::string as image_variant_ids,
-    images.value:admin_graphql_api_id::string AS images_admin_graphql_api_id,
-    images.value:alt::string AS images_alt,
-    images.value:created_at::string AS images_created_at,
-    images.value:height::string AS images_height,
-    images.value:id::string AS images_id,
-    images.value:position::string AS images_position,
-    images.value:src::string AS images_src,
-    images.value:updated_at::string AS images_updated_at,
-    images.value:width::string AS images_width,
+    image:width::string AS image_width,
+//    images.value:admin_graphql_api_id::string AS images_admin_graphql_api_id,
+//    images.value:alt::string AS images_alt,
+//    images.value:created_at::string AS images_created_at,
+//    images.value:height::string AS images_height,
+//    images.value:id::string AS images_id,
+//    images.value:position::string AS images_position,
+//    images.value:src::string AS images_src,
+//    images.value:updated_at::string AS images_updated_at,
+//    images_variant_ids.value::string as images_variant_ids,
+//    images.value:width::string AS images_width,
     options.value:id::string as options_id,
     options.value:name::string as options_name,
     options.value:position::string as options_position,
     options.value:product_id::string as options_product_id,
-    options.value:id::string as options_id,
     option_values.value::string as option_values_list,
     PRODUCT_TYPE,
     PUBLISHED_AT,
@@ -44,7 +44,6 @@ select
     variants.value:compare_at_price::string as var_compare_at_price,
     variants.value:created_at::string as var_created_at,
     variants.value:fulfillment_service::string as var_fulfillment_service,
-    variants.value:created_at::string as var_created_at,
     variants.value:grams::string as var_grams,
     variants.value:id::string as var_id,
     variants.value:image_id::string as var_image_id,
@@ -73,10 +72,17 @@ select
     _SDC_TABLE_VERSION
     
 FROM "RIOT_SHOPIFY"."SHOPIFY_RIOTSTORES"."PRODUCTS"
-,LATERAL FLATTEN (INPUT=> IMAGES) images
-,LATERAL FLATTEN (INPUT=> IMAGE, path=> 'variant_ids') image_variant_ids
-,LATERAL FLATTEN (INPUT=> OPTIONS) options
-,LATERAL FLATTEN (INPUT=> options.value:values) option_values
-,LATERAL FLATTEN (INPUT=> VARIANTS) variants
+//,LATERAL FLATTEN (INPUT=> IMAGES, outer => true) images
+//,LATERAL FLATTEN (INPUT=> images.value, path=> 'variant_ids', outer => true) images_variant_ids
+,LATERAL FLATTEN (INPUT=> IMAGE, path=> 'variant_ids', outer => true) image_variant_ids
+,LATERAL FLATTEN (INPUT=> OPTIONS, outer => true) options
+,LATERAL FLATTEN (INPUT=> options.value:values,outer => true ) option_values
+,LATERAL FLATTEN (INPUT=> VARIANTS, outer => true) variants
 
-where image_id = images_id
+
+//where image_id = images_id;
+
+  
+  )
+;
+
