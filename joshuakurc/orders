@@ -1,4 +1,4 @@
-create view ORDERS_FLATTENED AS (
+create or replace view "RIOT_SHOPIFY"."SHOPIFY_RIOTSTORES"."ORDERS_FLATTENED" AS (
 select 
 ADMIN_GRAPHQL_API_ID,
 APP_ID,
@@ -49,7 +49,9 @@ discount_applications:title::string as disc_app_title,
 discount_applications:type::string as disc_app_type,
 discount_applications:value::string as disc_app_value,
 discount_applications:value_type::string as disc_app_value_type,
-DISCOUNT_CODES,
+discount_codes.value:amount::string as discount_codes_amount,
+discount_codes.value:code::string as discount_codes_code,
+discount_codes.value:type::string as discount_codes_type,
 EMAIL,
 FINANCIAL_STATUS,
 fa.value:admin_graphql_api_id::string as ful_admin_graphql_api_id,
@@ -64,7 +66,11 @@ fa.value:status::string as ful_status,
 fa.value:tracking_company::string as ful_tracking_company,
 fa.value:tracking_number::string as ful_tracking_number,
 fa_line_items.value:admin_graphql_api_id::string as fa_li_admin_graphql_api_id,
-fa_line_items.value:discount_allocations::string as fa_li_discount_allocations,
+fa_line_items_discount_alloc.value:amount::string as fa_line_items_discount_alloc_amount,
+fa_line_items_discount_alloc.value:amount_set:presentment_money:amount::string as fa_li_disc_alloc_pres_money,
+fa_line_items_discount_alloc.value:amount_set:presentment_money:currency_code::string as fa_li_disc_alloc_pres_curr_code,
+fa_line_items_discount_alloc.value:amount_set:shop_money:amount::string as fa_li_disc_alloc_shop_money,
+fa_line_items_discount_alloc.value:amount_set:shop_money:currency_code::string as fa_li_disc_alloc_shop_curr_code,
 fa_line_items.value:fulfillable_quantity::string as fa_li_fulfillable_quantity,
 fa_line_items.value:fulfillment_service::string as fa_li_fulfillment_service,
 fa_line_items.value:fulfillment_status::string as fa_li_fulfillment_status,
@@ -115,7 +121,11 @@ GATEWAY,
 ID,
 LANDING_SITE,
 li.value:admin_graphql_api_id::string as li_admin_graphql_api_id,
-li.value:discount_allocations::string as li_discount_allocations,
+//li.value:discount_allocations::string as li_discount_allocations,
+line_items_discount_alloc.value:amount_set:presentment_money:amount::string as li_disc_alloc_pres_money,
+line_items_discount_alloc.value:amount_set:presentment_money:currency_code::string as li_disc_alloc_pres_curr_code,
+line_items_discount_alloc.value:amount_set:shop_money:amount::string as li_disc_alloc_shop_money,
+line_items_discount_alloc.value:amount_set:shop_money:currency_code::string as li_disc_alloc_shop_curr_code,
 li.value:fulfillable_quantity::string as li_fulfillable_quantity,
 li.value:fulfillment_service::string as li_fulfillment_service,
 li.value:fulfillment_status::string as li_fulfillment_status,
@@ -279,26 +289,26 @@ _SDC_SEQUENCE,
 _SDC_TABLE_VERSION
 
 from "RIOT_SHOPIFY"."SHOPIFY_RIOTSTORES"."ORDERS" o
-,lateral flatten(input => fulfillments) fa // flattens the Fulfillment column
-,lateral flatten(input=>fa.value:line_items) fa_line_items // flattens the Line Items Array within the Fulfillment Column
-,lateral flatten(input=>fa_line_items.value:tax_lines) fa_line_items_tax_lines //flattens the tax lines array within the Line Items Array within the Fulfillment Column
-,lateral flatten(input=>fa_line_items.value:properties) fa_line_items_properties//flattens the tax lines array within the Line Items Array within the Fulfillment Column
-,lateral flatten(input => line_items) li // flattens the Line_Items column
-,lateral flatten(input=>li.value:tax_lines) line_items_tax_lines //flattens the tax lines array within the Line Items Column
-,lateral flatten(input=>li.value:properties) line_items_properties //flattens the properties array within the Line Items Column
-,lateral flatten(input=>note_attributes) note_att //flattens the Note Attributes Column
-,lateral flatten(input => payment_gateway_names) pay_gate_names //flattens the Payment Gateway Names Column
-,lateral flatten(input => shipping_lines) shipping_lines //flattens the Shipping Lines Column
-,lateral flatten(input=>shipping_lines.value:tax_lines) ship_tax_lines //flattens the tax lines array within the Shipping Lines Column
-,lateral flatten(input=>tax_lines) tax_lines 
-
+,lateral flatten(input => fulfillments,  outer => true) fa // flattens the Fulfillment column
+,lateral flatten(input=>fa.value:line_items,  outer => true) fa_line_items // flattens the Line Items Array within the Fulfillment Column
+,lateral flatten(input=>fa_line_items.value:tax_lines,  outer => true) fa_line_items_tax_lines //flattens the tax lines array within the Line Items Array within the Fulfillment Column
+,lateral flatten(input=>fa_line_items.value:properties,  outer => true) fa_line_items_properties//flattens the tax lines array within the Line Items Array within the Fulfillment Column
+,lateral flatten(input=>fa_line_items.value:discount_allocations,  outer => true) fa_line_items_discount_alloc //flattens the discount allocations array within the Line Items Array within the Fulfillment Column
+,lateral flatten(input => line_items,  outer => true) li // flattens the Line_Items column
+,lateral flatten(input=>li.value:tax_lines,  outer => true) line_items_tax_lines //flattens the tax lines array within the Line Items Column
+,lateral flatten(input=>li.value:properties,  outer => true) line_items_properties //flattens the properties array within the Line Items Column
+,lateral flatten(input=>li.value:discount_allocations,  outer => true) line_items_discount_alloc //flattens the discount allocations array within the Line Items Column
+,lateral flatten(input=>note_attributes,  outer => true) note_att //flattens the Note Attributes Column
+,lateral flatten(input => payment_gateway_names, outer => true) pay_gate_names //flattens the Payment Gateway Names Column
+,lateral flatten(input => shipping_lines,  outer => true) shipping_lines //flattens the Shipping Lines Column
+,lateral flatten(input=>shipping_lines.value:tax_lines,  outer => true) ship_tax_lines //flattens the tax lines array within the Shipping Lines Column
+,lateral flatten(input=>tax_lines,  outer => true) tax_lines 
+,lateral flatten(input=>discount_codes,  outer => true) discount_codes 
 
 where LI_VARIANT_ID = FA_LI_VARIANT_ID
 and LI_SKU = FA_LI_SKU
 and LI_PRODUCT_ID = FA_LI_PRODUCT_ID
+//and LI_PROPERTIES_VALUE = FA_LI_PROP_VALUE
+
 
 )
-;
-
-
-
