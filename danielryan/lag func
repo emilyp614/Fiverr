@@ -1,0 +1,69 @@
+SET @acc=-1,@am=-1,@rec=-1, @account='',@receipt_id='', @item_id='', @item=-1;
+
+select
+  d.account_id,
+  d.receipt_id,
+  d.item_id,
+  d.curr_account_id,
+  d.prev_account_id,
+  d.curr_receipt_id,
+  d.lag_receipt_id,
+  d.curr_item_id,
+  d.prev_item_id,
+  d.curr_amount,
+  d.prev_amount,
+  case 
+  when prev_amount = '' then 'SALE'
+  when curr_amount = prev_amount then 'SALE'
+  when curr_amount > prev_amount 
+    and item_id = prev_item_id 
+    and account_id = prev_account_id
+    then 'REFUND'
+  when curr_amount < prev_amount 
+    and item_id = prev_item_id 
+    and account_id = prev_account_id
+    then 'CORRECTION'
+  else 'SALE'
+end as TYPE1
+from
+(
+  select c.*,
+  if (curr_account_id = prev_account_id 
+        and curr_receipt_id = lag_receipt_id 
+        and item_id = prev_item_id ,lag_amount,'')  as prev_amount
+  from 
+(
+    select b.*,
+    
+    if( curr_receipt_id = lag_receipt_id,lag_item_id ,'') as prev_item_id
+    from (
+        select
+        a.account_id,
+        a.receipt_id,
+        a.item_id,
+        a.amount,
+        IF(@rec<>receipt_id,1,0) or if(@rec=-1,1,0) as LATEST,
+        IF(@item<>item_id,1,0) or if(@item=-1,1,0) as LATEST_item,
+        @account prev_account_id,
+        @account:=account_id curr_account_id,
+        @rec lag_receipt_id,
+        @rec:=receipt_id curr_receipt_id,
+        @item lag_item_id,
+        @item:=item_id curr_item_id,
+        @am lag_amount, 
+        @am:=amount curr_amount
+
+          from 
+          (select v.account_id, v.receipt_id, d.item_id, d.amount, d.type from
+             Receipt_versions v, 
+             Receipt_details d
+             where v.receipt_id = d.receipt_id
+             order by v.account_id,d.receipt_id,d.item_id) a
+      order by a.account_id,a.receipt_id,a.item_id ) b
+       order by account_id,receipt_id,item_id ) c
+        order by account_id,receipt_id,item_id ) d
+        order by account_id,receipt_id,item_id
+  ;
+ 
+ 
+ 
