@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS `Receipt_versions` (
+  `account_id` int(6) unsigned NOT NULL,
+  `receipt_id` int(3) unsigned NOT NULL,
+  `receipt_version_id` int(2) NOT NULL,
+  `new_receipt_version_id` varchar(20),
+  PRIMARY KEY (`account_id`,`receipt_id`)
+) DEFAULT CHARSET=utf8;
+INSERT INTO `Receipt_versions` (`account_id`, `receipt_id`, `receipt_version_id`, `new_receipt_version_id`) VALUES
+  ('500', '123', '1', '2'),
+  ('500', '124', '2', '3'),
+  ('500', '125', '3', 'NULL');
+ CREATE TABLE IF NOT EXISTS `Receipt_details` (
+  `receipt_id` int(3) unsigned NOT NULL,
+  `item_id` int(3) unsigned NOT NULL,
+  `amount` float(20) NOT NULL,
+  `type` varchar(20)
+  
+) DEFAULT CHARSET=utf8;
+INSERT INTO `Receipt_details` (`receipt_id`, `item_id`, `amount`, `type`) VALUES
+('123','101','20','SALE'),
+('123','102','25','SALE'),
+('123','103','5','SALE'),
+('124','101','20','SALE'),
+('124','101','-20','REFUND'),
+('124','102','25','SALE'),
+('124','103','5','SALE'),
+('125','101','20','SALE'),
+('125','101','-20','SALE'),
+('125','102','25','SALE'),
+('125','102','-25','REFUND'),
+('125','103','5','SALE');
